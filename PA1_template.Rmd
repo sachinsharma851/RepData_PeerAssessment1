@@ -23,15 +23,17 @@ head(TotalSteps)
 
 ##Plotting the histogram 
 hist(TotalSteps$steps, main = "Total steps by day", xlab = "day", breaks=30)
-MeanSteps <- aggregate(steps ~ date, data = activity_complete, mean, na.rm = TRUE)
-MedianSteps <- aggregate(steps ~ date, data = activity_complete, median, na.rm = TRUE)
-head(MeanSteps)
-MedianSteps
+MeanSteps <- aggregate(steps ~ date, data= activity_complete, mean, na.rm = TRUE)
+avg1<-mean(TotalSteps$steps)
+med1<-median(TotalSteps$steps)
+avg1
+med1
 ```
+As we see above the mean and the median values.
 
 ## What is the average daily activity pattern?
 
-To find teh daily activity pattern it need to get find mean number of stesp on each interval of the day.
+To find the daily activity pattern it need to get find mean number of stesp on each interval of the day.
 
 ```{r}
 ## Aggregaing the data based on the interval field and calculating the  mean for each interval
@@ -49,7 +51,7 @@ MeanStepsInterval[MeanStepsInterval$mean_steps==max(MeanStepsInterval$mean_steps
 
 ## Imputing missing values
 
-Finding the number of records which has missing Steps data and contain NA and replacing them with the mean of that particulat day.
+Finding the number of records which has missing Steps data and contain NA and replacing them with the mean of that particular day.
 ```{r}
 nrow(activity[is.na(activity$steps),])
 
@@ -62,20 +64,24 @@ names(newactivity)[4] <- "day_mean_steps"
 newactivity$steps[is.na(newactivity$steps)] <- as.integer(
         round(newactivity$day_mean_steps[is.na(newactivity$steps)]))
 
-TotalSteps <- aggregate(steps ~ date, data = activity, sum, na.rm = TRUE)
-hist(TotalSteps$steps, main = "Total steps by day", xlab = "day", breaks=30)
-MeanSteps <- aggregate(steps ~ date, data = activity, mean, na.rm = TRUE)
-MedianSteps <- aggregate(steps ~ date, data = activity, median, na.rm = TRUE)
+TotalSteps2 <- aggregate(steps ~ date, data = newactivity, sum, na.rm = TRUE)
+hist(TotalSteps2$steps, main = "Total steps by day", xlab = "day", breaks=30)
+MeanSteps <- aggregate(steps ~ date, data = newactivity, mean, na.rm = TRUE)
+MedianSteps <- aggregate(steps ~ date, data = newactivity, median, na.rm = TRUE)
 
 ## New Mean & Median after populating missing data
-head(MeanSteps)
-head(MedianSteps)
-##MedianSteps
+avg2<-mean(TotalSteps2$steps)
+med2<-median(TotalSteps2$steps)
+avg2
+med2
+
 ```
+After inputting missing values, we see the the new mean and median do not differ much from the one that we got by excluding the missing values.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 This requires to first categories the data record into a weekday and weekend record by adding a new field
+
 ```{r}
 ## se up a new column  day type and set it to value weekday. Then determine the rows which are saturday or sunday and update their dayype column to weekend.
 newactivity$daytype <- "weekday"
@@ -88,6 +94,7 @@ newactivity$daytype <- as.factor(newactivity$daytype)
 ```
 
 The new data set with the additional field is then used to find the mean for each categoy of the day.
+
 ```{r}
 newMeanStepsInterval <- aggregate(steps ~ interval + daytype, data =newactivity, mean)
 head(newMeanStepsInterval)
@@ -102,5 +109,7 @@ xyplot( mean_steps ~ interval|daytype ,data= newMeanStepsInterval,
         ylab = "Average Number of Steps ")
 
 ```
+
+As we see in teh graphs that the values/pattern is different between week day and weekends
 
 This concludes the assignment by answering all the questions.

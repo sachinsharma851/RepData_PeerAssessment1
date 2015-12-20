@@ -1,25 +1,106 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
-
+# Assignment for Reproducible Research
+Submitted for the compeletion of the course, the assigment is about processing the personal movement activity data caputured using monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. It requires to answer the set of questions as below.
 
 ## Loading and preprocessing the data
+Reading the csv data file into the  data frame and modifying the date format. Then filtering the data to include on the records which are complete.
 
+```{r}
+activity<-read.csv("C:/Users/sachin/Documents/R/repdata-data-activity/activity.csv")
+str(activity)
+activity$date <- as.Date(activity$date, "%Y-%m-%d")
+activity_complete <- activity[complete.cases(activity),]
 
+```
 
 ## What is mean total number of steps taken per day?
 
+This is simply done by using the completed set of data and then aggregating on the required date.
 
+```{r}
+## Aggregaing the data based on the date filed and calculating the sum, mean and median for each day
+TotalSteps <- aggregate(steps ~ date, data = activity_complete, sum, na.rm = TRUE)
+head(TotalSteps)
+
+##Plotting the histogram 
+hist(TotalSteps$steps, main = "Total steps by day", xlab = "day", breaks=30)
+MeanSteps <- aggregate(steps ~ date, data = activity_complete, mean, na.rm = TRUE)
+MedianSteps <- aggregate(steps ~ date, data = activity_complete, median, na.rm = TRUE)
+head(MeanSteps)
+MedianSteps
+```
 
 ## What is the average daily activity pattern?
 
+To find teh daily activity pattern it need to get find mean number of stesp on each interval of the day.
 
+```{r}
+## Aggregaing the data based on the interval field and calculating the  mean for each interval
+MeanStepsInterval <- aggregate(steps ~ interval, data= activity_complete, mean,na.rm = TRUE)
+names(MeanStepsInterval)[2] <- "mean_steps"
+## Plotting the mean data for each interval
+plot(x = MeanStepsInterval$interval,y = MeanStepsInterval$mean_steps,type = "l",
+    main = "Time Series Plot of the 5-Minute Interval",
+    xlab = "5-Minute Interval",
+    ylab = "Average Number of Steps")
+
+## Finding the inteval which has the maximum value of the mean steps
+MeanStepsInterval[MeanStepsInterval$mean_steps==max(MeanStepsInterval$mean_steps),]
+```
 
 ## Imputing missing values
 
+Finding the number of records which has missing Steps data and contain NA and replacing them with the mean of that particulat day.
+```{r}
+nrow(activity[is.na(activity$steps),])
 
+## merging the missing data with the means number of steps on that day
+newactivity <- merge(activity, MeanSteps, by = 'date', all.y = F)
+names(newactivity)[2] <- "steps"
+names(newactivity)[4] <- "day_mean_steps"
+
+## Replacing the NA values with the Mean of the day value
+newactivity$steps[is.na(newactivity$steps)] <- as.integer(
+        round(newactivity$day_mean_steps[is.na(newactivity$steps)]))
+
+TotalSteps <- aggregate(steps ~ date, data = activity, sum, na.rm = TRUE)
+hist(TotalSteps$steps, main = "Total steps by day", xlab = "day", breaks=30)
+MeanSteps <- aggregate(steps ~ date, data = activity, mean, na.rm = TRUE)
+MedianSteps <- aggregate(steps ~ date, data = activity, median, na.rm = TRUE)
+
+## New Mean & Median after populating missing data
+head(MeanSteps)
+head(MedianSteps)
+##MedianSteps
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+This requires to first categories the data record into a weekday and weekend record by adding a new field
+```{r}
+## se up a new column  day type and set it to value weekday. Then determine the rows which are saturday or sunday and update their dayype column to weekend.
+newactivity$daytype <- "weekday"
+weekend <- weekdays(as.Date(newactivity$date)) %in% c("Saturday", "Sunday")
+newactivity$daytype[weekend == TRUE] <- "weekend"
+
+## convert new character column to factor
+newactivity$daytype <- as.factor(newactivity$daytype)
+
+```
+
+The new data set with the additional field is then used to find the mean for each categoy of the day.
+```{r}
+newMeanStepsInterval <- aggregate(steps ~ interval + daytype, data =newactivity, mean)
+head(newMeanStepsInterval)
+names(newMeanStepsInterval)[3] <- "mean_steps"
+
+##Plotting the graphs for mean value of interval for both weekday& weekend
+library(lattice)
+xyplot( mean_steps ~ interval|daytype ,data= newMeanStepsInterval,
+        type = "l", 
+      main = "Time Series Plot of the 5-Minute Interval\nand the Average Number of Steps Taken,\nAveraged Across All Weekday Days or Weekend Days",
+        xlab = "5-Minute Interval",
+        ylab = "Average Number of Steps ")
+
+```
+
+This concludes the assignment by answering all the questions.
